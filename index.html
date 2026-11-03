@@ -192,6 +192,41 @@
   footer summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   footer ul { padding-left: 20px; margin-top: 8px; }
 
+  .story { margin-top: 40px; }
+  .story h2 {
+    font-size: 16px;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    margin-bottom: 16px;
+  }
+  .story h2 .tick { color: var(--accent); }
+  .act {
+    background: var(--panel);
+    border: 1px solid var(--panel-edge);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-bottom: 12px;
+  }
+  .act h3 {
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--accent);
+    margin-bottom: 8px;
+  }
+  .act p { font-size: 14px; color: var(--text); max-width: 75ch; }
+  .act p + p { margin-top: 8px; }
+  .act a { color: var(--accent); text-decoration: none; }
+  .act a:hover, .act a:focus-visible { text-decoration: underline; }
+  .story .coda {
+    font-size: 14px;
+    color: var(--dim);
+    max-width: 75ch;
+    margin-top: 16px;
+  }
+  .story .coda b { color: var(--text); }
+
   @media (prefers-reduced-motion: reduce) {
     * { transition: none !important; }
   }
@@ -266,6 +301,59 @@
       </div>
     </aside>
   </main>
+
+  <section class="story" aria-label="the story">
+    <h2><span class="tick">&gt;_</span> What you are actually looking at</h2>
+
+    <div class="act">
+      <h3>Act 1 — Reading a mind from its wiring alone</h3>
+      <p>We were handed a file of 17,253 numbers. No source code, no game, no documentation of what it was
+      trained on — just the weights of a tiny neural network. By looking at <i>where</i> the numbers were large
+      and where they were silent, we reconstructed what the network had learned: it only cares about one row of
+      the grid (where a paddle lives), it spends almost all of its capacity tracking a moving dot and remembering
+      where that dot was one tick earlier — exactly what you need to infer velocity — and it expects rewards in
+      three rows at the top. Conclusion: this network was trained to play <b>Breakout</b>. Nobody told us.
+      The knowledge was written into the numbers, and we read it like an X-ray.</p>
+    </div>
+
+    <div class="act">
+      <h3>Act 2 — The numbers still work, anywhere</h3>
+      <p>Those raw numbers were uploaded to
+      <a href="https://huggingface.co/HarleyCooper/grid-policy-mlp" target="_blank" rel="noopener">Hugging Face</a>,
+      pulled back down, and they <b>play the game</b>. What you see above is not a recording: the actual
+      17,253 parameters are doing live arithmetic in your browser, dozens of times per second, deciding left or
+      right. The "intelligence" is nothing but those decimals multiplied through a simple formula — the whole
+      mystery of deep learning made tangible in one file.</p>
+    </div>
+
+    <div class="act">
+      <h3>Act 3 — Surgery instead of schooling</h3>
+      <p>If a policy makes a mistake, you don't have to retrain it from scratch over thousands of games. You can
+      ask a counterfactual question — <i>which change to which numbers would have prevented that failure while
+      preserving everything else it does well?</i> — and solve for that change directly, verifying the answer by
+      replaying the game. That is the companion benchmark,
+      <a href="https://app.primeintellect.ai/dashboard/environments/harleycooper/weight-space-breakout" target="_blank" rel="noopener">weight-space-breakout</a>:
+      an AI is handed a deliberately broken policy and must repair its behavior with a handful of scalar edits,
+      scored by simulation. Behavior becomes something you can <b>edit</b>, not just <b>grow</b>.</p>
+      <p>One honest note: the weights playing above are the original trained ones, unmodified. The repair half of
+      this story lives in that benchmark — and in
+      <a href="https://app.primeintellect.ai/dashboard/environments/harleycooper/kimi-grid-breakout" target="_blank" rel="noopener">kimi-grid-breakout</a>,
+      where language models play this same game closed-loop, move by move, graded by the physics itself.</p>
+    </div>
+
+    <div class="act">
+      <h3>Why it matters</h3>
+      <p>Normally, changing what an AI does means retraining: expensive, slow, and you can never be sure what else
+      changed. Weight-space editing promises something different — behavior as <b>inspectable, addressable
+      mathematics</b>. Find the numbers responsible for a behavior, change exactly those, verify nothing else
+      moved. And if repair-by-reasoning works on a game, it works on any process with checkable steps: a
+      railroad engine manual's worth of structured knowledge becomes hyperspecific behavior for the cost of
+      electricity. Today this works on a 17-thousand-parameter toy; whether it scales to billion-parameter
+      models is the open frontier.</p>
+    </div>
+
+    <p class="coda">Source: <a href="https://github.com/HarleyCoops/breakout-policy-visualizer" target="_blank" rel="noopener"><b>github.com/HarleyCoops/breakout-policy-visualizer</b></a> — zero-build static page, inference in pure JavaScript.</p>
+  </section>
 
   <footer>
     <p>
