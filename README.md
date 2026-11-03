@@ -67,6 +67,40 @@ where an LLM receives the broken weights and must emit the fix as JSON.
 > half of the story lives in the benchmark above — the demo is the *before* picture that makes the
 > *after* meaningful.
 
+### Act 4 — The failure gym
+
+Act 3 repaired faults we injected on purpose. The harder question: **can a system find the failures on
+its own?** [`gym/failure_gym.py`](gym/failure_gym.py) is the closed loop — an RL gym where the training
+signal is failures, not rewards:
+
+1. **MINE** — greedy rollouts over 200 seeds; a *failure* is the exact decision node where a descending
+   ball's landing column (computed by exact forward simulation, wall bounces included) goes from
+   coverable to uncoverable because of the chosen paddle action.
+2. **DIAGNOSE** — the final layer is linear in the hidden state (`logits = h2 @ W3 + b3`), so the fatal
+   logit gap decomposes *exactly* into per-hidden-unit contributions. No gradients, no attribution
+   approximations — arithmetic.
+3. **SOLVE** — the minimal-norm closed-form edit that flips the decision at the failure state:
+   `W3[:, wrong] −= c·h2`, `W3[:, save] += c·h2`, with `c = (gap + margin) / 2‖h2‖²`.
+4. **GATE** — regression battery: is the failure fixed? How many probe-state decisions flipped? What
+   did the mean return on 64 held-out seeds do?
+5. **ITERATE** — apply the edit, re-mine for the *next* failure, repeat.
+
+![Composition curve](assets/gym.png)
+
+The result is the honest, publishable finding: **the net absorbs zero clean edits.** Edit #1 fixes its
+failure — and flips 64% of all probe decisions as collateral damage, halving the return. Edits #2–#7
+ping-pong between two failure modes (a right-edge miss and a left-edge miss) whose culprit hidden units
+overlap — each repair steals back the margin the previous one spent. Edit #8 fails the gate outright.
+
+That interference curve *is* the discovery: a 17k-parameter policy trained by PPO packs its decisions
+into shared, overlapping features, so single-state edits are never truly local. The next move is
+constrained edits — solve for the repair inside the null space of the probe activations, so fixing one
+state provably leaves the others untouched. The gym is the instrument that measures whether it works.
+
+```bash
+cd gym && python3 failure_gym.py   # numpy only; reproduces the report cards above in ~1 min
+```
+
 ## Why it matters
 
 Normally, changing what an AI does means retraining: expensive, slow, and you can never be sure what else
@@ -86,6 +120,7 @@ open frontier.
 | This repo | Zero-build static visualizer; pure-JS inference | [live demo](https://harleycoops.github.io/breakout-policy-visualizer/) |
 | `kimi-grid-breakout` | Closed-loop LLM Breakout environment (verifiers v1) | [Prime Intellect](https://app.primeintellect.ai/dashboard/environments/harleycooper/kimi-grid-breakout) |
 | `weight-space-breakout` | Weight-repair benchmark + the authoritative physics | [Prime Intellect](https://app.primeintellect.ai/dashboard/environments/harleycooper/weight-space-breakout) |
+| `gym/` | The failure gym: mine → diagnose → solve → gate → iterate | [`gym/failure_gym.py`](gym/failure_gym.py) |
 
 ## Run it locally
 
