@@ -1,0 +1,9 @@
+{
+  "name": "breakout-policy-visualizer",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Browser-based Breakout grid visualizer for the GridPolicyMLP policy network",
+  "scripts": {
+    "dev": "node server.js"
+  }
+}
