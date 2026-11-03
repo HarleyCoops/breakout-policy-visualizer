@@ -9,6 +9,8 @@ const ACTIONS = ["no-op", "up", "down", "left", "right"];
 const PADDLE_ROW = 8;
 const PADDLE_W = 2;
 const BRICK_ROWS = [1, 2, 3];
+// classic Breakout cabinet palette, top row first
+const BRICK_COLORS = { 1: "#ff5252", 2: "#ff9f2e", 3: "#ffe14d" };
 
 // ---------- model ----------
 let W = null; // weights json
@@ -57,6 +59,7 @@ const env = {
   ball: { r: 6, c: 4, vr: -1, vc: 1 },
   bricks: new Set(),
   prev: [], // previous-frame occupied cells (paddle + ball)
+  trail: [], // recent ball positions for the motion trail
   over: false,
   score: 0,
   step: 0,
@@ -74,6 +77,7 @@ function resetEnv() {
   env.bricks = new Set();
   for (const r of BRICK_ROWS) for (let c = 1; c <= 8; c++) env.bricks.add(r * 10 + c);
   env.prev = [];
+  env.trail = [];
   env.over = false;
   env.score = 0;
   env.step = 0;
@@ -82,56 +86,50 @@ function resetEnv() {
 function observation() {
   const x = new Float64Array(500);
   const put = (r, c, ch) => { x[(r * 10 + c) * 5 + ch] = 1; };
-  // ch3 walls
   for (let i = 0; i < 10; i++) {
     put(0, i, 3); put(9, i, 3); put(i, 0, 3); put(i, 9, 3);
   }
-  // ch0 paddle
   for (let k = 0; k < PADDLE_W; k++) put(PADDLE_ROW, env.paddleCol + k, 0);
-  // ch1 ball
   put(env.ball.r, env.ball.c, 1);
-  // ch2 bricks
   for (const b of env.bricks) put(Math.floor(b / 10), b % 10, 2);
-  // ch4 previous frame (agent + moving object cells)
   for (const p of env.prev) put(p.r, p.c, 4);
   return x;
 }
 
 function stepEnv(action) {
   if (env.over) return null;
-  // remember current occupancy for next obs's prev-frame channel
   const occ = [{ r: env.ball.r, c: env.ball.c }];
   for (let k = 0; k < PADDLE_W; k++) occ.push({ r: PADDLE_ROW, c: env.paddleCol + k });
   env.prev = occ;
+  env.trail.push({ r: env.ball.r, c: env.ball.c });
+  if (env.trail.length > 6) env.trail.shift();
 
-  // paddle
   if (action === 3) env.paddleCol = Math.max(1, env.paddleCol - 1);
   if (action === 4) env.paddleCol = Math.min(9 - PADDLE_W, env.paddleCol + 1);
 
-  // ball
   let { r, c, vr, vc } = env.ball;
   let nr = r + vr, nc = c + vc, ev = null;
 
-  if (nc <= 0 || nc >= 9) { vc = -vc; nc = c + vc; }
-  if (nr <= 0) { vr = -vr; nr = r + vr; }
+  if (nc <= 0 || nc >= 9) { vc = -vc; nc = c + vc; blip(220, 0.04); }
+  if (nr <= 0) { vr = -vr; nr = r + vr; blip(220, 0.04); }
 
-  // brick collision
   if (env.bricks.has(nr * 10 + nc)) {
     env.bricks.delete(nr * 10 + nc);
     env.score += 1;
     vr = -vr; nr = r + vr;
     ev = `brick +1 (${env.bricks.size} left)`;
+    blip(880, 0.07);
   }
-  // paddle collision
   if (nr === PADDLE_ROW && nc >= env.paddleCol && nc < env.paddleCol + PADDLE_W) {
     vr = -Math.abs(vr); nr = PADDLE_ROW - 1;
     ev = ev || "paddle bounce";
+    blip(440, 0.05);
   }
-  // missed: ball hits bottom wall
   if (nr >= 9) {
     env.over = true;
     env.ball = { r: 8, c: nc, vr, vc };
     env.step += 1;
+    gameOverSound();
     return "game-over";
   }
 
@@ -140,15 +138,55 @@ function stepEnv(action) {
 
   if (env.bricks.size === 0) {
     env.over = true;
+    clearSound();
     return "cleared";
   }
   return ev;
+}
+
+// ---------- sound (WebAudio, off until enabled) ----------
+let audioCtx = null;
+function ensureAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+function blip(freq, dur) {
+  if (!document.getElementById("sound").checked) return;
+  try {
+    const ctx = ensureAudio();
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.type = "square";
+    o.frequency.value = freq;
+    g.gain.setValueAtTime(0.05, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + dur);
+    o.connect(g).connect(ctx.destination);
+    o.start();
+    o.stop(ctx.currentTime + dur);
+  } catch (e) { /* audio unavailable — fine */ }
+}
+function gameOverSound() {
+  if (!document.getElementById("sound").checked) return;
+  [330, 220, 147].forEach((f, i) => setTimeout(() => blip(f, 0.12), i * 130));
+}
+function clearSound() {
+  if (!document.getElementById("sound").checked) return;
+  [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => blip(f, 0.1), i * 110));
 }
 
 // ---------- rendering ----------
 const canvas = document.getElementById("grid");
 const ctx = canvas.getContext("2d");
 const CELL = 52; // 10*52 = 520
+
+function glowCell(r, c, fill, inset, blur) {
+  ctx.save();
+  ctx.shadowColor = fill;
+  ctx.shadowBlur = blur;
+  ctx.fillStyle = fill;
+  ctx.fillRect(c * CELL + inset, r * CELL + inset, CELL - inset * 2, CELL - inset * 2);
+  ctx.restore();
+}
 
 function draw(showGhost) {
   ctx.clearRect(0, 0, 520, 520);
@@ -159,16 +197,24 @@ function draw(showGhost) {
     ctx.beginPath(); ctx.moveTo(i * CELL, 0); ctx.lineTo(i * CELL, 520); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(0, i * CELL); ctx.lineTo(520, i * CELL); ctx.stroke();
   }
-  const cell = (r, c, fill, inset = 3) => {
-    ctx.fillStyle = fill;
-    ctx.fillRect(c * CELL + inset, r * CELL + inset, CELL - inset * 2, CELL - inset * 2);
-  };
   // walls
   for (let i = 0; i < 10; i++) {
-    cell(0, i, "#2b3742"); cell(9, i, "#2b3742"); cell(i, 0, "#2b3742"); cell(i, 9, "#2b3742");
+    for (const [r, c] of [[0, i], [9, i], [i, 0], [i, 9]]) {
+      ctx.fillStyle = "#2b3742";
+      ctx.fillRect(c * CELL + 3, r * CELL + 3, CELL - 6, CELL - 6);
+    }
   }
-  // bricks
-  for (const b of env.bricks) cell(Math.floor(b / 10), b % 10, "#ff6a5c");
+  // bricks — classic row colors with a soft glow
+  for (const b of env.bricks) {
+    const r = Math.floor(b / 10), c = b % 10;
+    glowCell(r, c, BRICK_COLORS[r] || "#ff6a5c", 3, 10);
+  }
+  // ball trail (oldest faintest)
+  env.trail.forEach((p, i) => {
+    const t = (i + 1) / env.trail.length;
+    ctx.fillStyle = `rgba(255, 178, 36, ${0.06 + t * 0.16})`;
+    ctx.fillRect(p.c * CELL + 16, p.r * CELL + 16, CELL - 32, CELL - 32);
+  });
   // ghost of previous frame
   if (showGhost) {
     for (const p of env.prev) {
@@ -179,18 +225,21 @@ function draw(showGhost) {
       ctx.setLineDash([]);
     }
   }
-  // paddle
-  for (let k = 0; k < PADDLE_W; k++) cell(PADDLE_ROW, env.paddleCol + k, "#3ef26a");
-  // ball
-  cell(env.ball.r, env.ball.c, "#ffb224", 14);
+  // paddle — hot phosphor green
+  for (let k = 0; k < PADDLE_W; k++) glowCell(PADDLE_ROW, env.paddleCol + k, "#3ef26a", 3, 14);
+  // ball — bright amber orb
+  glowCell(env.ball.r, env.ball.c, "#ffb224", 13, 18);
 
   if (env.over) {
     ctx.fillStyle = "rgba(12,16,20,0.65)";
     ctx.fillRect(0, 0, 520, 520);
-    ctx.fillStyle = env.bricks.size === 0 ? "#3ef26a" : "#ff6a5c";
-    ctx.font = "800 28px 'JetBrains Mono', monospace";
+    ctx.fillStyle = env.bricks.size === 0 ? "#3ef26a" : "#ff5252";
+    ctx.font = "800 24px 'Press Start 2P', 'JetBrains Mono', monospace";
     ctx.textAlign = "center";
+    ctx.shadowColor = ctx.fillStyle;
+    ctx.shadowBlur = 20;
     ctx.fillText(env.bricks.size === 0 ? "BOARD CLEARED" : "GAME OVER", 260, 250);
+    ctx.shadowBlur = 0;
     ctx.font = "400 14px 'JetBrains Mono', monospace";
     ctx.fillStyle = "#d7e0e7";
     ctx.fillText("score " + env.score + " · press R to restart", 260, 282);
@@ -216,10 +265,16 @@ function logEvent(html) {
   while (log.children.length > 30) log.removeChild(log.lastChild);
 }
 
+function getHi() { return parseInt(localStorage.getItem("kgb-hiscore") || "0", 10); }
+function setHi(v) { localStorage.setItem("kgb-hiscore", String(v)); }
+
 function updateStats(lastAction, probs) {
+  const hi = Math.max(getHi(), env.score);
+  if (env.score >= hi && env.score > 0) setHi(env.score);
   $("s-ep").textContent = env.episode;
   $("s-step").textContent = env.step;
   $("s-score").textContent = env.score;
+  $("s-hi").textContent = hi;
   $("s-bricks").textContent = env.bricks.size;
   $("s-act").textContent = lastAction == null ? "—" : ACTIONS[lastAction];
   barRows.forEach((row, i) => {
@@ -278,9 +333,10 @@ $("btn-step").addEventListener("click", () => {
 $("btn-reset").addEventListener("click", doReset);
 $("speed").addEventListener("input", () => {
   $("speed-out").textContent = $("speed").value + " steps/s";
-  if (playing) setPlaying(true); // restart timer with new rate
+  if (playing) setPlaying(true);
 });
 $("ghost").addEventListener("change", () => draw($("ghost").checked));
+$("sound").addEventListener("change", (e) => { if (e.target.checked) ensureAudio(); });
 
 function doReset() {
   setPlaying(false);

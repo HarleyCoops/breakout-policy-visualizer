@@ -6,7 +6,7 @@
 <title>Breakout Policy Visualizer — GridPolicyMLP</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;800&family=Press+Start+2P&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg: #0c1014;
@@ -61,6 +61,37 @@
     border: 1px solid var(--panel-edge);
     border-radius: 8px;
     padding: 16px;
+  }
+  /* CRT bezel + scanlines around the playfield */
+  .screen {
+    position: relative;
+    max-width: 552px;
+    margin: 0 auto;
+    padding: 14px;
+    border-radius: 14px;
+    background: linear-gradient(180deg, #161e26, #0e141a);
+    border: 1px solid #26333f;
+    box-shadow: inset 0 0 24px rgba(0,0,0,0.7), 0 0 32px rgba(62, 242, 106, 0.06);
+  }
+  .screen::after {
+    content: "";
+    position: absolute;
+    inset: 14px;
+    border-radius: 4px;
+    pointer-events: none;
+    background:
+      repeating-linear-gradient(0deg, rgba(0,0,0,0.16) 0 1px, transparent 1px 4px),
+      radial-gradient(ellipse at center, transparent 55%, rgba(6, 10, 13, 0.5) 100%);
+    mix-blend-mode: multiply;
+  }
+  .marquee {
+    font-family: "Press Start 2P", "JetBrains Mono", monospace;
+    font-size: 13px;
+    color: var(--ball);
+    text-align: center;
+    letter-spacing: 0.08em;
+    margin-bottom: 10px;
+    text-shadow: 0 0 12px rgba(255, 178, 36, 0.55);
   }
   canvas#grid {
     display: block;
@@ -141,6 +172,7 @@
   }
   .stat-grid .k { color: var(--dim); }
   .stat-grid .v { text-align: right; font-weight: 600; }
+  #s-score, #s-hi { color: var(--ball); text-shadow: 0 0 8px rgba(255, 178, 36, 0.45); }
 
   .bars { display: flex; flex-direction: column; gap: 8px; font-size: 12px; }
   .bar-row { display: grid; grid-template-columns: 52px 1fr 44px; gap: 8px; align-items: center; }
@@ -297,11 +329,14 @@
 
   <main id="game">
     <section class="stage" aria-label="game grid">
-      <canvas id="grid" width="520" height="520"></canvas>
+      <div class="screen">
+        <div class="marquee">★ INSERT COIN ★</div>
+        <canvas id="grid" width="520" height="520"></canvas>
+      </div>
       <div class="legend">
         <span><i class="swatch" style="background:var(--agent)"></i>paddle (ch0)</span>
         <span><i class="swatch" style="background:var(--ball)"></i>ball (ch1)</span>
-        <span><i class="swatch" style="background:var(--brick)"></i>bricks (ch2)</span>
+        <span><i class="swatch" style="background:linear-gradient(90deg,#ff5252,#ff9f2e,#ffe14d)"></i>bricks (ch2)</span>
         <span><i class="swatch" style="background:var(--wall)"></i>walls (ch3)</span>
         <span><i class="swatch" style="background:var(--ghost);border:1px dashed var(--ball)"></i>prev frame (ch4)</span>
       </div>
@@ -330,6 +365,9 @@
         <div class="field">
           <label class="check"><input type="checkbox" id="ghost" checked> show previous frame</label>
         </div>
+        <div class="field">
+          <label class="check"><input type="checkbox" id="sound"> arcade sound</label>
+        </div>
       </div>
 
       <div class="card">
@@ -338,6 +376,7 @@
           <span class="k">episode</span><span class="v" id="s-ep">1</span>
           <span class="k">step</span><span class="v" id="s-step">0</span>
           <span class="k">score</span><span class="v" id="s-score">0</span>
+          <span class="k">hi-score</span><span class="v" id="s-hi">0</span>
           <span class="k">bricks left</span><span class="v" id="s-bricks">24</span>
           <span class="k">last action</span><span class="v" id="s-act">—</span>
         </div>
