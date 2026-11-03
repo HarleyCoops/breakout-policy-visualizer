@@ -238,11 +238,64 @@
     <h1><span class="tick">&gt;_</span> Breakout Policy Visualizer</h1>
     <p class="sub">
       Stepping the deployed <a href="https://huggingface.co/HarleyCooper/grid-policy-mlp" target="_blank" rel="noopener">HarleyCooper/grid-policy-mlp</a>
-      (500&rarr;32&rarr;32&rarr;5 tanh MLP, PPO, 17,253 params) through a reconstructed Breakout grid world. Inference runs live in your browser.
+      (500&rarr;32&rarr;32&rarr;5 tanh MLP, PPO, 17,253 params) through a reconstructed Breakout grid world. Inference runs live in your browser — scroll down to play.
     </p>
   </header>
 
-  <main>
+  <section class="story" aria-label="the story" style="margin-top:0;margin-bottom:40px">
+    <h2><span class="tick">&gt;_</span> What you are actually looking at</h2>
+
+    <div class="act">
+      <h3>Act 1 — Reading a mind from its wiring alone</h3>
+      <p>We were handed a file of 17,253 numbers. No source code, no game, no documentation of what it was
+      trained on — just the weights of a tiny neural network. By looking at <i>where</i> the numbers were large
+      and where they were silent, we reconstructed what the network had learned: it only cares about one row of
+      the grid (where a paddle lives), it spends almost all of its capacity tracking a moving dot and remembering
+      where that dot was one tick earlier — exactly what you need to infer velocity — and it expects rewards in
+      three rows at the top. Conclusion: this network was trained to play <b>Breakout</b>. Nobody told us.
+      The knowledge was written into the numbers, and we read it like an X-ray.</p>
+    </div>
+
+    <div class="act">
+      <h3>Act 2 — The numbers still work, anywhere</h3>
+      <p>Those raw numbers were uploaded to
+      <a href="https://huggingface.co/HarleyCooper/grid-policy-mlp" target="_blank" rel="noopener">Hugging Face</a>,
+      pulled back down, and they <b>play the game</b>. What you see below is not a recording: the actual
+      17,253 parameters are doing live arithmetic in your browser, dozens of times per second, deciding left or
+      right. The "intelligence" is nothing but those decimals multiplied through a simple formula — the whole
+      mystery of deep learning made tangible in one file.</p>
+    </div>
+
+    <div class="act">
+      <h3>Act 3 — Surgery instead of schooling</h3>
+      <p>If a policy makes a mistake, you don't have to retrain it from scratch over thousands of games. You can
+      ask a counterfactual question — <i>which change to which numbers would have prevented that failure while
+      preserving everything else it does well?</i> — and solve for that change directly, verifying the answer by
+      replaying the game. That is the companion benchmark,
+      <a href="https://app.primeintellect.ai/dashboard/environments/harleycooper/weight-space-breakout" target="_blank" rel="noopener">weight-space-breakout</a>:
+      an AI is handed a deliberately broken policy and must repair its behavior with a handful of scalar edits,
+      scored by simulation. Behavior becomes something you can <b>edit</b>, not just <b>grow</b>.</p>
+      <p>One honest note: the weights playing below are the original trained ones, unmodified. The repair half of
+      this story lives in that benchmark — and in
+      <a href="https://app.primeintellect.ai/dashboard/environments/harleycooper/kimi-grid-breakout" target="_blank" rel="noopener">kimi-grid-breakout</a>,
+      where language models play this same game closed-loop, move by move, graded by the physics itself.</p>
+    </div>
+
+    <div class="act">
+      <h3>Why it matters</h3>
+      <p>Normally, changing what an AI does means retraining: expensive, slow, and you can never be sure what else
+      changed. Weight-space editing promises something different — behavior as <b>inspectable, addressable
+      mathematics</b>. Find the numbers responsible for a behavior, change exactly those, verify nothing else
+      moved. And if repair-by-reasoning works on a game, it works on any process with checkable steps: a
+      railroad engine manual's worth of structured knowledge becomes hyperspecific behavior for the cost of
+      electricity. Today this works on a 17-thousand-parameter toy; whether it scales to billion-parameter
+      models is the open frontier.</p>
+    </div>
+
+    <p class="coda"><a href="#game"><b>&darr; Scroll down to play the live game</b></a> &middot; Source: <a href="https://github.com/HarleyCoops/breakout-policy-visualizer" target="_blank" rel="noopener"><b>github.com/HarleyCoops/breakout-policy-visualizer</b></a> — zero-build static page, inference in pure JavaScript.</p>
+  </section>
+
+  <main id="game">
     <section class="stage" aria-label="game grid">
       <canvas id="grid" width="520" height="520"></canvas>
       <div class="legend">
@@ -301,59 +354,6 @@
       </div>
     </aside>
   </main>
-
-  <section class="story" aria-label="the story">
-    <h2><span class="tick">&gt;_</span> What you are actually looking at</h2>
-
-    <div class="act">
-      <h3>Act 1 — Reading a mind from its wiring alone</h3>
-      <p>We were handed a file of 17,253 numbers. No source code, no game, no documentation of what it was
-      trained on — just the weights of a tiny neural network. By looking at <i>where</i> the numbers were large
-      and where they were silent, we reconstructed what the network had learned: it only cares about one row of
-      the grid (where a paddle lives), it spends almost all of its capacity tracking a moving dot and remembering
-      where that dot was one tick earlier — exactly what you need to infer velocity — and it expects rewards in
-      three rows at the top. Conclusion: this network was trained to play <b>Breakout</b>. Nobody told us.
-      The knowledge was written into the numbers, and we read it like an X-ray.</p>
-    </div>
-
-    <div class="act">
-      <h3>Act 2 — The numbers still work, anywhere</h3>
-      <p>Those raw numbers were uploaded to
-      <a href="https://huggingface.co/HarleyCooper/grid-policy-mlp" target="_blank" rel="noopener">Hugging Face</a>,
-      pulled back down, and they <b>play the game</b>. What you see above is not a recording: the actual
-      17,253 parameters are doing live arithmetic in your browser, dozens of times per second, deciding left or
-      right. The "intelligence" is nothing but those decimals multiplied through a simple formula — the whole
-      mystery of deep learning made tangible in one file.</p>
-    </div>
-
-    <div class="act">
-      <h3>Act 3 — Surgery instead of schooling</h3>
-      <p>If a policy makes a mistake, you don't have to retrain it from scratch over thousands of games. You can
-      ask a counterfactual question — <i>which change to which numbers would have prevented that failure while
-      preserving everything else it does well?</i> — and solve for that change directly, verifying the answer by
-      replaying the game. That is the companion benchmark,
-      <a href="https://app.primeintellect.ai/dashboard/environments/harleycooper/weight-space-breakout" target="_blank" rel="noopener">weight-space-breakout</a>:
-      an AI is handed a deliberately broken policy and must repair its behavior with a handful of scalar edits,
-      scored by simulation. Behavior becomes something you can <b>edit</b>, not just <b>grow</b>.</p>
-      <p>One honest note: the weights playing above are the original trained ones, unmodified. The repair half of
-      this story lives in that benchmark — and in
-      <a href="https://app.primeintellect.ai/dashboard/environments/harleycooper/kimi-grid-breakout" target="_blank" rel="noopener">kimi-grid-breakout</a>,
-      where language models play this same game closed-loop, move by move, graded by the physics itself.</p>
-    </div>
-
-    <div class="act">
-      <h3>Why it matters</h3>
-      <p>Normally, changing what an AI does means retraining: expensive, slow, and you can never be sure what else
-      changed. Weight-space editing promises something different — behavior as <b>inspectable, addressable
-      mathematics</b>. Find the numbers responsible for a behavior, change exactly those, verify nothing else
-      moved. And if repair-by-reasoning works on a game, it works on any process with checkable steps: a
-      railroad engine manual's worth of structured knowledge becomes hyperspecific behavior for the cost of
-      electricity. Today this works on a 17-thousand-parameter toy; whether it scales to billion-parameter
-      models is the open frontier.</p>
-    </div>
-
-    <p class="coda">Source: <a href="https://github.com/HarleyCoops/breakout-policy-visualizer" target="_blank" rel="noopener"><b>github.com/HarleyCoops/breakout-policy-visualizer</b></a> — zero-build static page, inference in pure JavaScript.</p>
-  </section>
 
   <footer>
     <p>
