@@ -1,4 +1,4 @@
-# 🕹️ Breakout Policy Visualizer
+# Breakout Policy Visualizer
 
 **A neural network's raw weights — 17,253 numbers, nothing else — playing Breakout live in your browser.**
 No server. No frameworks. No recording. The file of decimals *is* the player.
@@ -10,7 +10,7 @@ No server. No frameworks. No recording. The file of decimals *is* the player.
 </p>
 
 <p align="center">
-  <b>▶ <a href="https://harleycoops.github.io/breakout-policy-visualizer/">Play the live demo</a></b> ·
+  <b><a href="https://harleycoops.github.io/breakout-policy-visualizer/">Play the live demo</a></b> ·
   <a href="https://huggingface.co/HarleyCooper/grid-policy-mlp">Model on Hugging Face</a> ·
   <a href="https://app.primeintellect.ai/dashboard/environments/harleycooper/kimi-grid-breakout">kimi-grid-breakout on Prime Intellect</a> ·
   <a href="https://app.primeintellect.ai/dashboard/environments/harleycooper/weight-space-breakout">weight-space-breakout on Prime Intellect</a>
@@ -63,9 +63,10 @@ scored on 32 held-out seeds by the deterministic physics itself. That repair loo
 benchmark [weight-space-breakout](https://app.primeintellect.ai/dashboard/environments/harleycooper/weight-space-breakout),
 where an LLM receives the broken weights and must emit the fix as JSON.
 
-> **Honest note:** the weights playing in the demo are the original trained ones, unmodified. The repair
-> half of the story lives in the benchmark above — the demo is the *before* picture that makes the
-> *after* meaningful.
+> **Update:** the demo now has a weights selector — *original* (the trained PPO policy) and
+> *repaired* (the same weights after three closed-form edits from the
+> [KimiBrainSurgery](https://github.com/HarleyCoops/KimiBrainSurgery) monotonic failure gym,
+> +20% mean return on held-out seeds). Same architecture, same code path — only the decimals differ.
 
 ### Act 4 — The failure gym
 
@@ -117,7 +118,8 @@ open frontier.
 | Piece | What it is | Where |
 |---|---|---|
 | `GridPolicyMLP` | The original PPO-trained policy (500→32→32→5, tanh, 17,253 params) | [Hugging Face](https://huggingface.co/HarleyCooper/grid-policy-mlp) |
-| This repo | Zero-build static visualizer; pure-JS inference | [live demo](https://harleycoops.github.io/breakout-policy-visualizer/) |
+| This repo | Zero-build static visualizer; pure-JS inference; original vs repaired weights selector | [live demo](https://harleycoops.github.io/breakout-policy-visualizer/) |
+| `grid-policy-mlp-repaired` | The policy after 3 kept closed-form edits (+20% held-out return) | [Hugging Face](https://huggingface.co/HarleyCooper/grid-policy-mlp-repaired) |
 | `kimi-grid-breakout` | Closed-loop LLM Breakout environment (verifiers v1) | [Prime Intellect](https://app.primeintellect.ai/dashboard/environments/harleycooper/kimi-grid-breakout) |
 | `weight-space-breakout` | Weight-repair benchmark + the authoritative physics | [Prime Intellect](https://app.primeintellect.ai/dashboard/environments/harleycooper/weight-space-breakout) |
 | `gym/` | The failure gym: mine → diagnose → solve → gate → iterate | [`gym/failure_gym.py`](gym/failure_gym.py) |

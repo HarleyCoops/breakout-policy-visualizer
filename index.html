@@ -356,6 +356,13 @@
           <input type="range" id="speed" min="1" max="30" value="6">
         </div>
         <div class="field">
+          <label for="wsel">weights</label>
+          <select id="wsel">
+            <option value="weights.json">original (PPO-trained)</option>
+            <option value="weights_repaired.json">repaired (failure gym, +20% return)</option>
+          </select>
+        </div>
+        <div class="field">
           <label for="mode">policy mode</label>
           <select id="mode">
             <option value="sampled">sampled (softmax)</option>

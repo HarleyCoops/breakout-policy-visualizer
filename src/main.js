@@ -356,21 +356,20 @@ document.addEventListener("keydown", (e) => {
 });
 
 // ---------- boot ----------
-fetch("weights.json")
-  .then((r) => {
-    if (!r.ok) throw new Error("weights.json HTTP " + r.status);
+function loadWeights(url) {
+  return fetch(url).then((r) => {
+    if (!r.ok) throw new Error(url + " HTTP " + r.status);
     return r.json();
-  })
-  .then((w) => {
+  }).then((w) => {
     W = w;
-    resetEnv();
-    draw(true);
-    updateStats(null, null);
-    logEvent("weights loaded — 17,253 params, inference in-browser");
-    logEvent(`episode <b>1</b> started`);
-  })
-  .catch((err) => {
-    logEvent("failed to load weights.json: " + err.message);
+    doReset();
+    logEvent(`weights loaded: <b>${url}</b> — 17,253 params, inference in-browser`);
+  }).catch((err) => {
+    logEvent("failed to load " + url + ": " + err.message);
     $("btn-play").disabled = true;
     $("btn-step").disabled = true;
   });
+}
+
+$("wsel").addEventListener("change", (e) => loadWeights(e.target.value));
+loadWeights($("wsel").value);
