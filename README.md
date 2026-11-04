@@ -63,10 +63,11 @@ scored on 32 held-out seeds by the deterministic physics itself. That repair loo
 benchmark [weight-space-breakout](https://app.primeintellect.ai/dashboard/environments/harleycooper/weight-space-breakout),
 where an LLM receives the broken weights and must emit the fix as JSON.
 
-> **Update:** the demo now has a weights selector — *original* (the trained PPO policy) and
-> *repaired* (the same weights after three closed-form edits from the
-> [KimiBrainSurgery](https://github.com/HarleyCoops/KimiBrainSurgery) monotonic failure gym,
-> +20% mean return on held-out seeds). Same architecture, same code path — only the decimals differ.
+> **Update:** the demo now has a weights selector — *original* (the trained PPO policy),
+> *repaired v1* (never worse on 1,000 held-out games, +1.08 mean return), and
+> *repaired v3* (highest mean, +1.83, but regresses 17 games). All from the
+> [KimiBrainSurgery](https://github.com/HarleyCoops/KimiBrainSurgery) failure gym.
+> Same architecture, same code path — only the decimals differ.
 
 ### Act 4 — The failure gym
 
