@@ -58,14 +58,16 @@ well?* — solve for the change, and verify by replaying the game:
 ![Weight surgery](assets/surgery.png)
 
 Three deliberate faults injected into a hand-written Breakout policy — reversed controls, a left bias, a
-severed "move right" connection — and each one repaired with **exact scalar edits, zero gradient steps**,
-scored on 32 held-out seeds by the deterministic physics itself. That repair loop is the published
+severed "move right" connection — define tasks accepting **exact scalar edits, zero gradient steps**,
+scored by the deterministic physics itself. This describes the benchmark, not three successful LLM repairs; the initial no-tool trial improved one of three faults. That repair loop is the published
 benchmark [weight-space-breakout](https://app.primeintellect.ai/dashboard/environments/harleycooper/weight-space-breakout),
 where an LLM receives the broken weights and must emit the fix as JSON.
 
 > **Update:** the demo now has a weights selector — *original* (the trained PPO policy),
-> *repaired v1* (never worse on 1,000 held-out games, +1.08 mean return), and
-> *repaired v3* (highest mean, +1.83, but regresses 17 games). All from the
+> *repaired v1* (+1.075, zero observed losses on 1,000 games),
+> *repaired v3* (+1.834, 17 losses on that same set), and *repaired v4*
+> (+3.299, 20 losses on 1,000 fresh games). These are greedy-mode results,
+> not guarantees for sampled browser play. All from the
 > [KimiBrainSurgery](https://github.com/HarleyCoops/KimiBrainSurgery) failure gym.
 > Same architecture, same code path — only the decimals differ.
 
@@ -120,7 +122,7 @@ open frontier.
 |---|---|---|
 | `GridPolicyMLP` | The original PPO-trained policy (500→32→32→5, tanh, 17,253 params) | [Hugging Face](https://huggingface.co/HarleyCooper/grid-policy-mlp) |
 | This repo | Zero-build static visualizer; pure-JS inference; original vs repaired weights selector | [live demo](https://harleycoops.github.io/breakout-policy-visualizer/) |
-| `grid-policy-mlp-repaired` | The policy after 3 kept closed-form edits (+20% held-out return) | [Hugging Face](https://huggingface.co/HarleyCooper/grid-policy-mlp-repaired) |
+| `grid-policy-mlp-repaired` | The policy after 3 kept edits (+1.075 mean, about 12.4%, on the 1,000-game greedy set) | [Hugging Face](https://huggingface.co/HarleyCooper/grid-policy-mlp-repaired) |
 | `kimi-grid-breakout` | Closed-loop LLM Breakout environment (verifiers v1) | [Prime Intellect](https://app.primeintellect.ai/dashboard/environments/harleycooper/kimi-grid-breakout) |
 | `weight-space-breakout` | Weight-repair benchmark + the authoritative physics | [Prime Intellect](https://app.primeintellect.ai/dashboard/environments/harleycooper/weight-space-breakout) |
 | `gym/` | The failure gym: mine → diagnose → solve → gate → iterate | [`gym/failure_gym.py`](gym/failure_gym.py) |
@@ -150,3 +152,9 @@ plus a softmax sampler, plus the grid physics, is the entire runtime.
 ---
 
 *Physics engine adapted from [weight-space-breakout](https://app.primeintellect.ai/dashboard/environments/harleycooper/weight-space-breakout) (MIT). Built with [Kimi](https://kimi.com).*
+
+## Evaluation provenance
+
+Published scores use greedy actions; this browser also offers sampled actions.
+JavaScript numerical details can differ from the NumPy benchmark near ties.
+[Current status](https://github.com/HarleyCoops/FailureIsAllYouNeed/blob/codex/initial-results/docs/STATUS_2026-11-03.md) · [Per-seed dataset](https://huggingface.co/datasets/HarleyCooper/failure-is-all-you-need-evaluations).
